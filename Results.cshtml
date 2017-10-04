@@ -1,0 +1,167 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";  // declare layout
+    Page.Title = "Results: ";  // set page title
+
+    WebSecurity.RequireAuthenticatedUser();  // most be logged in to view this page
+
+    var mode = Request.QueryString["mode"]; // get page mode [drug or event]
+    var keyword = Request.QueryString["key"]; // get search keyword 
+    var sql = "";  // sql query variable
+
+    if ( keyword.IsEmpty() ){ // if keyword is empty, go to search page
+        Response.Redirect("~/Search");
+    }
+
+    // Open database connection
+    var db = Database.Open("FAERS_db");
+
+    // check mode [drug or event]
+    if (mode == "event") {
+        // get list of cases related to adverse events
+        sql = "SELECT DISTINCT TOP 100 primaryid FROM Reaction WHERE pt = @0 ORDER BY primaryid";
+    } else {
+        // Get list cases related to drugname
+        sql = "SELECT DISTINCT primaryid, drugname FROM Drug WHERE drugname = @0 ORDER BY primaryid";
+    }
+
+    // Run query to get list of cases based on keyword
+    var cases_query = db.Query(sql, keyword);
+}
+
+<hgroup class="title">
+    <h1>@Page.Title</h1>
+    <h2>@keyword</h2>
+</hgroup>
+
+@if (cases_query.Count() > 0){
+
+    <table style="width:100%" border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>Case</th>
+            <th>Patient</th>
+            <th>Seq</th>
+            <th>Code</th>
+            @if(mode == "event") {
+                <th>Drug</th>
+            }
+            <th>Ingredient</th>
+            <th>Route</th>
+            <th>Dose</th>
+        </tr>
+
+        @foreach (var row in cases_query){
+            // get patient information
+            var patient_query = db.QuerySingle("SELECT * FROM Patient_Info WHERE primaryid = @0", row.primaryid);
+
+            // get drug information 
+            if (mode == "event") {
+                sql = "SELECT primaryid, drug_seq, role_cod, drugname, prod_ai, route, dose_vbm, dechal, rechal FROM Drug WHERE primaryid = @1 ORDER BY drug_seq";
+            }else {
+                sql = "SELECT primaryid, drug_seq, role_cod, drugname, prod_ai, route, dose_vbm, dechal, rechal " +
+                      "FROM Drug WHERE drugname = @0 AND primaryid = @1 ORDER BY drug_seq";
+            }
+
+            //  Run query to get drug info
+            var drug_query = db.Query(sql, keyword, row.primaryid);
+
+            var flag = false; // display case number only once when more than one record is available for the same case
+            // save patient information to String variable
+            var patient_info = "<ul class=\"patient\">"; // open ul
+            // Date
+            patient_info += (patient_query.event_dt != null) ? "<li class=\"date\" title=\"Event Date\">" + patient_query.event_dt.ToString("MM/dd/yyyy") + "</li>" : "";
+            // Sex
+            patient_info += (patient_query.sex != null) ? "<li class=\"sex\" title=\"Sex\">" + patient_query.sex + "</li>" : "";
+            // Age
+            patient_info += (patient_query.age != null) ? "<li class=\"age\" title=\"Age\">" + Math.Floor(patient_query.age).ToString("0") + " YR</li>" : "";
+            // Weight
+            patient_info += (patient_query.wt != null) ? "<li class=\"weight\" title=\"Weight\">" + patient_query.wt.ToString("0") + " KG</li>" : "";
+            // Country
+            patient_info += (patient_query.occr_country != null) ? "<li class=\"country\" title=\"Country\">" + patient_query.occr_country + "</li>" : "";
+            patient_info += "</ul>"; // close ul
+
+            foreach (var drug in drug_query) {
+                <tr>
+                    @if(drug_query.Count > 1 && !flag) { // display case number only once when more than one record is available for the same case
+                        <td rowspan="@(drug_query.Count)"><strong><a href="~/Details?id=@row.primaryid" class="lightbox">@row.primaryid</a></strong></td>
+                        <td rowspan="@(drug_query.Count)">
+                            @Html.Raw(patient_info)  @*display patient information as HTML code*@
+                        </td>
+                        flag = true;
+                    }
+                    else if (drug_query.Count == 1){
+                        <td><strong><a href="~/Details?id=@row.primaryid" class="lightbox">@row.primaryid</a></strong></td>
+                        <td>
+                            @Html.Raw(patient_info)  @*display patient information as HTML code*@
+                        </td>
+                    }
+                    <td>@drug.drug_seq</td>
+                    <td>@drug.role_cod</td>
+                    @if (mode == "event") {
+                        <td>@drug.drugname</td>
+                    }
+                    <td>@drug.prod_ai</td>
+                    <td>@drug.route</td>
+                    <td>@drug.dose_vbm</td>
+                </tr>
+            }
+
+        }
+    </table>
+}
+else{
+    <p>No records found!</p>
+}
+
+@*Lightbox Implementation*@
+<div id="dialog" title="Details"></div>
+
+@section Scripts {
+<script>
+
+    $(function () {
+        // lightbox settings
+        $("#dialog").dialog({
+            autoOpen: false,
+            draggable: false,
+            resizable: false,
+            modal: true,
+            buttons: {
+                Print: function () {
+                    PrintDetails('dialog');
+                }
+            }
+        });
+
+        $("a.lightbox").click(function (e) {
+            e.preventDefault();
+
+            $('#dialog').load(this.href).dialog('open');
+
+            $("#dialog").dialog({
+                height: $(window).height() * 0.9,
+                width: $(window).width() * 0.9
+           });
+        });
+    });
+
+    function PrintDetails(elem) {
+        var w = window.open('', 'PRINT');
+
+        // open full screen 
+        w.moveTo(0, 0);
+        w.resizeTo(screen.width, screen.height);
+
+        w.document.write('<html><head><title>' + document.title + ' @keyword</title>');
+        w.document.write('</head><body >');
+        w.document.write(document.getElementById(elem).innerHTML);
+        w.document.write('</body></html>');
+        w.document.close(); // necessary for IE >= 10
+        w.focus(); // necessary for IE >= 10
+        w.print();
+        w.close();
+
+        return true;
+    }
+
+</script>
+}

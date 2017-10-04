@@ -1,0 +1,71 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Home Page";
+}
+
+@section featured {
+<section class="featured">
+    <div class="content-wrapper">
+        <hgroup class="title">
+            <h1>Welcome to FAERS Search Tool </h1>
+            <h2></h2>
+        </hgroup>
+        <p>
+            <i>The FDA Adverse Event Reporting System (FAERS)</i> is a database that contains information 
+                on adverse event and medication error reports submitted to FDA. 
+                The database is designed to support the FDA's post-marketing safety surveillance program for 
+                drug and therapeutic biologic products. Using FAERS Search Tool, user are able to look up quarterly data files include:</p>
+        <ul>
+            <li>Demographic and administrative information </li>
+            <li>Drug information from the case reports</li>
+            <li>Reaction information from the report</li>
+            <li>Patient outcome information from the reports</li>
+            <li>Information on the source of the reports</li>
+            <li>Indications</li>
+            <li>Therapy</li>
+        </ul>
+
+        <p>To learn more about FAERS, visit
+            <a href="https://www.fda.gov/drugs" title="U.S. Food and Drugs Administration">https://www.fda.gov/drugs</a>.
+        The webpage features <mark>raw data</mark> 
+        extracted from the AERS database for the indicated time ranges and are not cumulative. 
+        <br />For older AERS data files, visit <a href="https://www.fda.gov/Drugs/GuidanceComplianceRegulatoryInformation/Surveillance/AdverseDrugEffects/ucm083765.htm" 
+        title=" Quarterly Legacy AERS Data Files page">Quarterly Legacy AERS Data Files page</a>.
+        </p>                    
+    </div>
+</section>
+}
+
+<h3>FAERS Search Tool Instructions:</h3>
+
+<ol class="round">
+    <li class="one">
+        <h5>Register/Login</h5>
+        Please register if you do not have an account with us, or login in order to start using the search tool...
+
+        <br />You will be ask to provide your <i>email</i>, and <i>password</i> (6 or more characters for security purposes)
+        when register or login.
+        After users have registered with FAERS Seach Tool, email confirmation will be sent out. 
+        Please check your inbox, and be sure to confirm your email. 
+        <i><strong>After email has been confirmed, FAERS search feature will be available for users to use. </strong></i>
+
+    </li>
+
+    <li class="two">
+        <h5>Search for Name of Drugs or Search for Adverse Events</h5>
+        I. Looking up for <u>Drug Name</u> will provide users the detail page 
+                including patients' information related to that specify drug.
+        <br />II. Looking up for <u>Adverse Events</u> will provide users the detail information of patients' demographic, 
+                what type of drugs caused the specify side effect, and other related information.
+      
+    </li>
+@if (Roles.IsUserInRole("admin")) {
+    <li class="three">
+        <h5>Modify Users</h5>  
+         I. Admin users have the ability to modify the list of users who are currently using FAERS Search Tool.
+         They can make changes to users such as their roles and permissions. 
+        <br /> II. Upload new quaters to the database.
+        <br /> III. View individual data files.
+    </li>
+}
+</ol>

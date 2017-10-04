@@ -1,0 +1,37 @@
+﻿@{
+    // Only Admins can access this page
+    if (!Roles.IsUserInRole("admin")) { // if user is not an admin
+        Response.Redirect("~/"); // redirect to homepage
+    }
+
+    Layout = "~/_SiteLayout.cshtml"; // declare layout
+
+    var db = Database.Open("FAERS_db");  // Open database connection
+    var user_id = UrlData[0]; // gets user_id
+    var sql = "DELETE FROM UserProfile WHERE UserId=@0";
+    var msg_error = "";
+
+    if (user_id.IsEmpty()) { // if keyword is empty, go to search page
+        Response.Redirect("~/Users");
+    }
+
+    if ( !user_id.IsEmpty() ){
+        // check user is not deleting herself
+        if (!WebSecurity.CurrentUserId.ToString().Equals(user_id)) {
+            try {
+                db.Execute(sql, user_id);
+            } catch (Exception err) {
+                msg_error = "An error has ocurred. <br>" + err.Message;
+            } // end try 
+        } else {
+            msg_error = "You cannot delete yourself from this system!";
+        }
+        if ( msg_error.IsEmpty() ){
+            // redirect to project list page
+            Response.Redirect("~/Users");
+        }
+    } // end if:IsEmpty
+}
+
+@*show error*@
+<div id="msg_error">@Html.Raw(msg_error)</div>

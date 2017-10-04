@@ -1,0 +1,53 @@
+﻿<head>
+    <style type="text/css">
+        .auto-style1 {
+            text-align: center;
+        }
+    </style>
+</head>
+@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Home Page";
+}
+
+<body>
+    @if (WebSecurity.IsAuthenticated) {
+        if (Roles.IsUserInRole("admin")) {
+                <h1>Welcome Admin!</h1> 
+        }
+        else {
+            <h1>Welcome User!</h1>
+        }
+
+
+    }
+    <p></p>
+    <p></p>
+    <h4>FAERS Search Tool Instructions:</h4>
+
+    <ol class="round">
+        <li class="one">
+            <h5>Register/Login</h5>
+            Completed!
+
+        </li>
+
+        <li class="two">
+            <h5>Search for Name of Drugs or Search for Adverse Events</h5>
+            I. Looking up for <u>Drug Name</u> will provide users the detail page 
+                    containing patients' information related to that specify drug.
+            <br />II. Looking up for <u>Adverse Events</u> will provide users the detail information of patients' demographic, 
+                    what type of drugs has caused the specify side effect, and what other related information.
+      
+        </li>
+
+        <li class="three">
+             <h5>**Admin only: Modify Users</h5>
+        I. Admin users have the ability to modifies the list of users who are currently using FAERS Search Tool.
+         They can make changes to users such as their roles and permissions. 
+        <br /> II. Upload new quaters to the database.
+        <br /> III. View individual data files.
+        </li>
+    </ol>
+
+</body>

@@ -1,0 +1,85 @@
+﻿@{
+    // Only Admins can access this page
+    if( !Roles.IsUserInRole("admin") ){ // if user is not an admin
+        Response.Redirect("~/"); // redirect to home page
+    }
+    Layout = "~/_SiteLayout.cshtml"; // declare layout
+    Page.Title = "User Roles";
+    var db = Database.Open("FAERS_db");  // Open database connection
+
+    var role = "";
+    var user_id = UrlData[0];
+    if( user_id.IsEmpty() ){ // if user_id is not defined
+        Response.Redirect("~/Users"); // redirect to users page
+    } else{
+        // find if the user really exists in the database
+        var user_exists = db.QuerySingle("SELECT UserId FROM UserProfile WHERE UserId = @0", user_id);
+        if(user_exists == null){
+            Response.Redirect("~/Users"); // redirect to users page
+        }
+    }
+
+    // get role list
+    var sql = "SELECT RoleId AS id, RoleName AS name FROM webpages_Roles"; // roles list
+    var role_data = db.Query(sql);
+
+    // get user info
+    sql = "SELECT * FROM Users WHERE UserId = @0";
+    var user_data = db.QuerySingle(sql, user_id);
+
+    // Get records, if any, of users with this user_id
+    var role_exists = db.QuerySingle("SELECT * FROM webpages_UsersInRoles WHERE UserId = @0", user_id);
+
+    if (IsPost) { // page has been submitted
+        role = ( !Request.Form["role"].IsEmpty() )? Request.Form["role"] : null;
+
+        // check if role exists
+        if (role_exists == null) { // INSERT
+            try{
+                // Insert record into the table
+                sql = "INSERT INTO webpages_UsersInRoles (UserId, RoleId) VALUES (@0, @1)";
+                db.Execute(sql, user_id, role);
+                //ModelState.AddFormError("The information has been saved.");
+                Response.Redirect("~/Users");
+            } catch (Exception err){
+                ModelState.AddFormError(err.Message);
+            }
+        } else { // UPDATE
+            try{
+                sql = "UPDATE webpages_UsersInRoles SET RoleId=@0 WHERE UserId = @1";
+                db.Execute(sql, role, user_id);
+                Response.Redirect("~/Users");
+            } catch (Exception err){
+                ModelState.AddFormError(err.Message);
+            }
+        }
+
+    } else {
+        if (role_exists != null) { // UPDATE
+            role = role_exists.RoleId.ToString();
+        }
+    }
+}
+
+<form method="post">
+    @AntiForgery.GetHtml()
+    @* If at least one validation error exists, notify the user *@
+    @Html.ValidationSummary("System Message:", excludeFieldErrors: true, htmlAttributes: null)
+
+    <label for="role">Select the role that will be assigned to this user in the database. </label>
+    <br />
+    <select name="role" id="role">
+        <option value=""></option>
+        @foreach(var row in role_data){
+            var selected = ( row.id.ToString() == role )? "selected" : "" ;
+            <option value="@row.id" @selected>@row.name</option>
+        }
+    </select>
+          
+    <span id="description"></span>
+
+    <br />
+    <br />
+    <p><input type="submit" value="Save" /> <input type="button" onclick="history.back()" value="Cancel"></p>
+
+</form>

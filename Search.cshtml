@@ -1,0 +1,70 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";  // declare layout
+    Page.Title = "Search";
+
+    WebSecurity.RequireAuthenticatedUser();  // most be logged in to view this page
+
+    var mode = Request.QueryString["mode"]; // get page mode [drug or event]
+    var keyword = Request.Form["keyword"]; // get search keyword
+    var sql = "";  // sql query variable
+    var subheader = "Drug Names";
+    dynamic search_query = null; // holds search query
+    dynamic db = null; // holds databse connection
+
+    // check mode [drug or event]
+    if (mode == "event") {
+        subheader = "Adverse Events";
+        // search for adverse events
+        sql = "SELECT DISTINCT pt FROM Reaction WHERE CHARINDEX(LOWER(@0), LOWER(pt)) > 0 ORDER BY pt";
+    } else {
+        // search for drug names
+        sql = "SELECT DISTINCT drugname FROM Drug WHERE CHARINDEX(LOWER(@0), LOWER(drugname)) > 0 ORDER BY drugname";
+    }
+
+    if (IsPost){ // page has been submitted
+        db = Database.Open("FAERS_db");  // Open database connection
+
+        if (keyword != "") {
+            // Run query to get list of drug names based on keyword
+            search_query = db.Query(sql, keyword);
+        }
+    }
+}
+
+<hgroup class="title">
+    <h1>@Page.Title</h1>
+    <h2>@subheader</h2>
+</hgroup>
+
+@*Search box*@        
+<div id="search">
+    <form method="post">
+        <input type="text" id="keyword" name="keyword" value="@keyword" /> <input type="submit" value="Search" id="btn_search" />
+    </form> 
+</div>
+
+@if(search_query != null) {
+    if(search_query.Count > 0) {
+        <ul class="list">
+            @foreach( var row in search_query ){
+                if(mode == "event") { 
+                    <li><a href="~/Results?key=@row.pt&mode=event">@row.pt</a></li>
+                } else { 
+                    <li><a href="~/Results?key=@row.drugname">@row.drugname</a></li>
+                }
+            }
+        </ul>
+    } else { // not found
+        <p>There were no records found in the database! Try a different keyboard.</p>
+    }
+}
+
+@section Scripts {
+<script>
+
+    $(function () { 
+        $('#keyword').focus();
+    });
+
+</script>
+}

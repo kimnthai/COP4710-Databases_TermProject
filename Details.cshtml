@@ -1,0 +1,101 @@
+﻿@{
+    @*Layout = "~/_SiteLayout.cshtml";*@
+    Page.Title = "Case: ";
+
+    WebSecurity.RequireAuthenticatedUser();  // most be logged in to view this page
+
+    var db = Database.Open("FAERS_db");  // Open database connection
+    var primaryid = Request.QueryString["id"]; // get primaryid
+    // get patient information
+    var demo = db.QuerySingle("SELECT * FROM Patient_Info WHERE primaryid=@0", primaryid);
+
+    if (demo == null){
+        Response.Redirect("~/Search");
+    }
+
+    var reaction = db.Query("SELECT * FROM Reaction WHERE primaryid = @0", primaryid);
+    var outcome = db.Query("SELECT * FROM Outcome WHERE primaryid = @0", primaryid);
+    var report_sources = db.Query("SELECT * FROM Report_Sources WHERE primaryid = @0", primaryid);
+    var drug = db.Query("SELECT * FROM Drug_Info WHERE primaryid = @0", primaryid);
+}
+
+<hgroup class="title">
+    <h1>@Page.Title</h1>
+    <h2>@primaryid</h2>
+</hgroup>
+
+    <h3>Patient Information:</h3>
+    <table style="width:100%" border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>Event Date</th>
+            <th>Report Date</th>
+            <th>Age</th>
+            <th>Sex</th>
+            <th>Weight</th>
+            <th>Country</th>
+        </tr>
+        <tr>
+            <td>@( (demo.event_dt != null) ? demo.event_dt.ToString("MM/dd/yyyy") : "N/A")</td>
+            <td>@( (demo.rept_dt != null) ? demo.rept_dt.ToString("MM/dd/yyyy") : "N/A")</td>
+            <td>@( (demo.age != null) ? demo.age.ToString("0.00") + " YR" : "N/A")</td>
+            <td>@( (demo.sex != null) ? demo.sex : "N/A")</td>
+            <td>@( (demo.wt != null) ? demo.wt.ToString("0.00") + " KG" : "N/A")</td>
+            <td>@( (demo.occr_country != null) ? demo.occr_country : "N/A")</td>
+        </tr>
+    </table>
+
+
+@if (drug.Count() > 0){
+    <h3>Drug(s):</h3>
+    <table style="width:100%" border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>Name</th>
+            <th>Active Ingredient</th>
+            <th>Route</th>
+            <th>Dose</th>
+            <th>Form</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>PT</th> @*Prefered Term*@
+        </tr>
+        @foreach (var row in drug){
+            <tr>
+                <td>@row.drugname</td>
+                <td>@row.prod_ai</td>
+                <td>@row.route</td>
+                <td>@row.dose_vbm</td>
+                <td>@row.dose_form</td>
+                <td>@( (row.start_dt != null) ? row.start_dt.ToString("MM/dd/yyyy") : "N/A")</td>
+                <td>@( (row.end_dt != null) ? row.end_dt.ToString("MM/dd/yyyy") : "N/A")</td>
+                <td>@row.indi_pt</td>
+            </tr>
+        }
+    </table>
+}
+
+@if (reaction.Count() > 0) {
+    <h3>Adverse Event(s):</h3>
+    <ul>
+    @foreach (var row in reaction){
+        <li>@row.pt</li>
+    }
+    </ul>
+}
+
+@if (outcome.Count() > 0) {
+    <h3>Outcome(s):</h3>
+    <ul>
+        @foreach (var row in outcome){
+            <li>@row.outc_cod</li>
+        }
+    </ul>
+}
+
+@if (report_sources.Count() > 0) {
+    <h3>Report Sources:</h3>
+    <ul>
+        @foreach (var row in report_sources){
+            <li>@row.rpsr_cod</li>
+        }
+    </ul>
+}

@@ -1,0 +1,44 @@
+﻿@{
+    // Only Admins can access this page
+    if( !Roles.IsUserInRole("admin") ){ // if user is not an admin
+        Response.Redirect("~/"); // redirect to homepage
+    }
+    Layout = "~/_SiteLayout.cshtml"; // declare layout
+    // Declare variables
+    var db = Database.Open("FAERS_db");  // Open database connection
+    var sql = "";
+    var msg_error = "";
+    Page.Title = "User List";
+
+    sql = "SELECT * FROM Users ORDER BY UserId DESC"; // Users View
+    var grid = new WebGrid(db.Query(sql), rowsPerPage:100, canSort : true);
+
+}
+
+<div id="msg_error">@msg_error</div>
+
+@grid.GetHtml(
+    tableStyle : "table",  
+    headerStyle: "header",
+    columns: grid.Columns(
+        grid.Column("Email", header: "Email", format: @<a href="@Href("~/User_Roles", item.UserId)">@item.Email</a>),
+        grid.Column("RoleName", header: "Role", canSort: false),
+        grid.Column(header: "Delete", canSort: false, format: @<a href="@Href("~/Users_Delete", item.UserId)" class="delete" >X</a>)
+    )
+)
+
+@section Scripts {
+<script>
+
+    $(function () {
+        // user delete confirmation
+        $('a.delete').click(function (e) {
+            var confirmation = confirm("Are you sure you want to delete this user?");
+            if( !confirmation )
+                e.preventDefault();
+            return true;
+        });
+    });
+
+</script>
+}
