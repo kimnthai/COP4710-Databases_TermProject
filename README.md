@@ -20,5 +20,5 @@ The Website has seven total page. Only six of theses pages can be view by Regula
 4. Search Page - This page shows the demographic table with links to select each primary ID and display each ID’s associated drug information.
 5. Drug Page
 6. Adverse Events Page
-7. Users Page
+7. Users Page (available only for Admin Users)
 
